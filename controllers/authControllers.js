@@ -1,5 +1,7 @@
 const userModel = require('../models/userModel');
 
+const bcrypt = require('bcryptjs');
+
 const registerController = async (req, res) => {
   try {
     const { userName, email, password, phone, address } = req.body;
@@ -18,11 +20,14 @@ const registerController = async (req, res) => {
         message: "Email Already Registerd please Login",
       });
     }
+    var salt = bcrypt.genSaltSync(10);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
     //create new user 
     const user = await userModel.create({
       userName,
       email,
-      password,
+      password: hashedPassword,
       address,
       phone,
     });
@@ -50,13 +55,14 @@ const loginController = async (req, res)=>{
         message:'Please Provide All Fields'
       })
     }
-    const user = await userModel.findOne({email})
+    const user = await userModel.findOne({email},{password:0})
     if(!user){
       return res.status(404).send({
         success:false,
         message:'Email is not registerd'
       })
     }
+    user.password = undefined;
     res.status(200).send({
       success:true,
       message:'Login Successfully',
